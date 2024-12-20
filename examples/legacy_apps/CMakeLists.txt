@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.24)
 if (POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif()
@@ -33,7 +33,15 @@ collector_create (APP_LIB_DEPS "")
 collector_create (APP_EXTRA_C_FLAGS "")
 collect (APP_INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+
+if ("${PROJECT_VENDOR}" STREQUAL "xlnx")
+  include (${CMAKE_CURRENT_SOURCE_DIR}/cmake/vitis.cmake)
+endif()
+
 add_subdirectory (machine)
 add_subdirectory (system)
-add_subdirectory (tests)
 add_subdirectory (examples)
+
+if (DEFINED WITH_TESTS)
+  add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/tests)
+endif()
