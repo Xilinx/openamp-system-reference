@@ -9,15 +9,13 @@ set_property (GLOBAL PROPERTY OPENAMP_APP_NAME "${OPENAMP_APP_NAME}")
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/")
 
 include(CheckSymbolExists)
-check_symbol_exists(ARMR5 "xparameters_ps.h" HAS_ARMR5)
-if (HAS_ARMR5)
-  set (CROSS_PREFIX "armr5-none-eabi-"	CACHE INTERNAL "" FORCE)
-  set (CMAKE_SYSTEM_PROCESSOR "arm"	CACHE INTERNAL "" FORCE)
-  set_property (GLOBAL PROPERTY MACHINE "zynqmp_r5")
-else()
-  message( FATAL_ERROR "Invalid machine. CMake will exit" )
-  return()
-endif()
+
+# Demos currently target R5 and R52.
+# If the target is not one of these target cores, then surrounding
+# tooling (Yocto or Vitis) will report error.
+set (CROSS_PREFIX "armr5-none-eabi-"	CACHE INTERNAL "" FORCE)
+set (CMAKE_SYSTEM_PROCESSOR "arm"	CACHE INTERNAL "" FORCE)
+set_property (GLOBAL PROPERTY MACHINE "zynqmp_r5")
 
 # Ensure that for Compile step that the _AMD_GENERATED_ symbol is present
 # for app build if it was provided in CMake configure tooling
@@ -64,6 +62,10 @@ function (vitis_app_config)
   elseif(OPENAMP_APP_NAME STREQUAL "matrix_multiply")
     set (_app matrix_multiplyd)
   endif()
+
+  collect(PROJECT_LIB_DEPS metal)
+  collect(PROJECT_LIB_DEPS open_amp)
+  collector_list (_deps PROJECT_LIB_DEPS)
 
   collect (APP_COMMON_SOURCES "${APPS_ROOT_DIR}/examples/${OPENAMP_APP_NAME}/${_app}.c")
   collect (APP_COMMON_SOURCES "${APPS_ROOT_DIR}/examples/${OPENAMP_APP_NAME}/${PROJECT_SYSTEM}/main.c")
