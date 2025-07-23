@@ -16,4 +16,9 @@ zephyr_compile_definitions(METAL_MAX_DEVICE_REGIONS=2)
 
 target_include_directories(app PRIVATE ${LIBMETAL_INCLUDE_DIR} ${OPENAMP_INCLUDE_DIR} ${PLATFORM_DIR})
 
+if (CONFIG_BOARD_VERSAL2_RPU)
+    target_sources(app PRIVATE src/remote_mbox.c)
+else()
+    target_sources(app PRIVATE src/remote_ipm.c)
+endif()
 target_sources(app PRIVATE src/main_remote.c)

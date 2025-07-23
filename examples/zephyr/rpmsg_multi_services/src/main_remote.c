@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <zephyr/drivers/ipm.h>
+#include "remote.h"
 
 #include <openamp/open_amp.h>
 #include <metal/device.h>
@@ -48,9 +48,6 @@ static struct k_thread thread_mng_data;
 static struct k_thread thread_rp__client_data;
 static struct k_thread thread_tty_data;
 static struct k_thread thread_raw_data;
-
-static const struct device *const ipm_handle =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 
 static metal_phys_addr_t shm_physmap = SHM_START_ADDR;
 static metal_phys_addr_t rsc_tab_physmap;
@@ -92,17 +89,10 @@ static struct rpmsg_rcv_msg tty_msg[MAX_TTY_EPT];
 static struct rpmsg_endpoint raw_ept[MAX_RAW_EPT];
 static struct rpmsg_rcv_msg raw_msg[MAX_RAW_EPT];
 
-static K_SEM_DEFINE(data_sem, 0, 1);
+K_SEM_DEFINE(data_sem, 0, 1);
 static K_SEM_DEFINE(data_cs_sem, 0, 1);
 static K_SEM_DEFINE(data_tty_sem, 0, 1);
 static K_SEM_DEFINE(data_raw_sem, 0, 1);
-
-static void platform_ipm_callback(const struct device *dev, void *context,
-				  uint32_t id, volatile void *data)
-{
-	LOG_DBG("%s: msg received from mb %d\n", __func__, id);
-	k_sem_give(&data_sem);
-}
 
 static int rpmsg_recv_cs_callback(struct rpmsg_endpoint *ept, void *data,
 				  size_t len, uint32_t src, void *priv)
@@ -187,16 +177,6 @@ static void new_service_cb(struct rpmsg_device *rdev, const char *name,
 		__func__, name);
 }
 
-int mailbox_notify(void *priv, uint32_t id)
-{
-	ARG_UNUSED(priv);
-
-	LOG_DBG("%s: msg received\n", __func__);
-	ipm_send(ipm_handle, 0, id, NULL, 0);
-
-	return 0;
-}
-
 int platform_init(void)
 {
 	int rcs_size;
@@ -245,17 +225,8 @@ int platform_init(void)
 		return -1;
 	}
 
-	/* setup IPM */
-	if (!device_is_ready(ipm_handle)) {
-		LOG_DBG("IPM device is not ready\n");
-		return -1;
-	}
-
-	ipm_register_callback(ipm_handle, platform_ipm_callback, NULL);
-
-	status = ipm_set_enabled(ipm_handle, 1);
-	if (status) {
-		LOG_DBG("ipm_set_enabled failed\n");
+	if (mailbox_setup() < 0) {
+		LOG_DBG("Failed to set up IPC\n");
 		return -1;
 	}
 
@@ -264,7 +235,7 @@ int platform_init(void)
 
 static void cleanup_system(void)
 {
-	ipm_set_enabled(ipm_handle, 0);
+	mailbox_cleanup();
 	rpmsg_deinit_vdev(&rvdev);
 	metal_finish();
 }
@@ -309,7 +280,7 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 		goto failed;
 	}
 
-	rpmsg_virtio_init_shm_pool(&shpool, NULL, SHM_SIZE);
+	rpmsg_virtio_init_shm_pool(&shpool, (void *)SHM_START_ADDR, SHM_SIZE);
 	ret =  rpmsg_init_vdev(&rvdev, vdev, ns_cb, shm_io, &shpool);
 
 	if (ret) {
