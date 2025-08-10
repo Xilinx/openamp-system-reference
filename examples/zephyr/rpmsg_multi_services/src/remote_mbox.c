@@ -23,16 +23,23 @@ static void mbox_callback(const struct device *dev, mbox_channel_id_t id,
 
 void mailbox_cleanup(void)
 {
-	int ret = mbox_set_enabled_dt(&rx_channel, false);
+	int ret;
+
+	ret = mbox_set_enabled_dt(&rx_channel, false);
+	if (ret < 0) {
+		LOG_ERR("%s: Could not disable RX channel %d (%d)\n", __func__, rx_channel.channel_id, ret);
+		return;
+	}
+
+	ret = mbox_register_callback_dt(&rx_channel, NULL, NULL);
 	if (ret < 0)
-		LOG_DBG("Could not enable RX channel %d (%d)\n", rx_channel.channel_id, ret);
+		 LOG_ERR("%s: Could not wipe RX callback %d (%d)\n", __func__, rx_channel.channel_id, ret);
 }
 
 int mailbox_notify(void *priv, uint32_t id)
 {
 	ARG_UNUSED(priv);
 
-	LOG_DBG("%s: msg received\n", __func__);
 	mbox_send_dt(&tx_channel, NULL);
 
 	return 0;
@@ -40,20 +47,20 @@ int mailbox_notify(void *priv, uint32_t id)
 
 int mailbox_setup(void)
 {
+	int ret;
+
 	/* set up rx mbox */
-	int ret = mbox_register_callback_dt(&rx_channel, mbox_callback, NULL);
+	ret = mbox_register_callback_dt(&rx_channel, mbox_callback, NULL);
 	if (ret < 0) {
-		LOG_DBG("Could not register callback (%d)\n", ret);
-		return 0;
+		LOG_ERR("Could not register callback (%d)\n", ret);
+		return ret;
 	}
+
 	ret = mbox_set_enabled_dt(&rx_channel, true);
 	if (ret < 0) {
-		LOG_DBG("Could not enable RX channel %d (%d)\n", rx_channel.channel_id, ret);
-		return 0;
+		LOG_ERR("Could not enable RX channel. (%d)\n", ret);
+		return ret;
 	}
-	if (mbox_set_enabled_dt(&tx_channel, 1)) {
-		LOG_DBG("mbox_set_enable() error\n");
-		return 0;
-	}
+
 	return 0;
 }
