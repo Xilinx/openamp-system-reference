@@ -115,4 +115,6 @@ endif (DEFINED RPMSG_BUFFER_SIZE)
 
 option (WITH_DOC "Build with documentation" OFF)
 
+option (WITH_VENDOR_CMAKE_SCRIPT "If set, then stop execution after vendor logic is parsed" OFF)
+
 message ("-- C_FLAGS : ${CMAKE_C_FLAGS}")

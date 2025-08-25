@@ -33,10 +33,10 @@ collector_create (APP_LIB_DEPS "")
 collector_create (APP_EXTRA_C_FLAGS "")
 collect (APP_INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-
-if ("${PROJECT_VENDOR}" STREQUAL "xlnx")
-  include (${CMAKE_CURRENT_SOURCE_DIR}/cmake/vitis.cmake)
-endif()
+if (WITH_VENDOR_CMAKE_SCRIPT)
+  add_subdirectory(cmake/vendor)
+  return()
+endif(WITH_VENDOR_CMAKE_SCRIPT)
 
 add_subdirectory (machine)
 add_subdirectory (system)
