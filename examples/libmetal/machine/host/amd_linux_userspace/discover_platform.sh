@@ -332,7 +332,9 @@ main() {
 	timer_node=$(resolve_phandle "$dt_base" "$timer_ph")
 
 	ipi_parent=$(dirname -- "$mbox_node")
-	ipi_mask=$(read_dt_u32 "$mbox_node/xlnx,ipi-bitmask")
+	ipi_id=$(read_dt_u32 "$mbox_node/xlnx,ipi-id")
+	ipi_mask=$((1 << ipi_id))
+
 	ipi_dev_name=$(node_to_dev_name "$ipi_parent")
 	ttc_dev_name=$(node_to_dev_name "$timer_node")
 
@@ -349,6 +351,23 @@ main() {
 	shm0_desc_dev_name=$(node_to_dev_name "$carveout0_node")
 	shm1_desc_dev_name=$(node_to_dev_name "$carveout1_node")
 	shm_dev_name=$(node_to_dev_name "$carveout2_node")
+
+	# ensure UIO nodes are lowercase. platform bus lowers names
+	shm0_desc_dev_name=$(node_to_dev_name "$carveout0_node"); shm0_desc_dev_name=${shm0_desc_dev_name,,}
+	shm1_desc_dev_name=$(node_to_dev_name "$carveout1_node"); shm1_desc_dev_name=${shm1_desc_dev_name,,}
+	shm_dev_name=$(node_to_dev_name "$carveout2_node"); shm_dev_name=${shm_dev_name,,}
+
+	# ensure UIO substring is present in carveouts
+	for v in shm0_desc_dev_name shm1_desc_dev_name shm_dev_name; do
+		val=${!v}
+		val=${val,,}
+
+		if [[ "$val" != *_uio_* ]]; then
+		    val=${val/.libmetal_/.libmetal_uio_}
+		fi
+
+		printf -v "$v" "%s" "$val"
+	done
 
 	cfg_text=$(
 		printf "SHM0_DESC_DEV_NAME=%s\n" "$shm0_desc_dev_name"
