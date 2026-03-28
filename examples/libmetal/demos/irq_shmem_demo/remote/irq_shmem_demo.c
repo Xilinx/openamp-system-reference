@@ -99,6 +99,11 @@ int demo(void *arg)
 	}
 
 	metal_info("REMOTE: IRQ and shared memory\n");
+	if (!ch->shm_io || !ch->ipi_io) {
+		metal_err("REMOTE: Failed to initialize shared memory IO regions.\n");
+		ret = -ENODEV;
+		goto out;
+	}
 
 	lbuf = metal_allocate_memory(BUF_SIZE_MAX);
 	if (!lbuf) {
