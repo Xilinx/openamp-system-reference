@@ -283,7 +283,6 @@ static int xlnx_machine_init(void)
 static void xlnx_machine_cleanup(void)
 {
 	metal_finish();
-	free_resource_table();
 
 	Xil_DCacheDisable();
 	Xil_ICacheDisable();
@@ -311,14 +310,7 @@ int platform_init(int argc, char *argv[], void **platform)
 	unsigned long proc_id = 0;
 	unsigned long rsc_id = 0;
 	struct remoteproc *rproc;
-	int len = 0;
 	int ret;
-
-	/*
-	 * Ensure resource table resource is set up before any attempts
-	 * are made to cache the table.
-	 */
-	get_resource_table(0, &len);
 
 	if (!platform)
 		return -EINVAL;
@@ -362,8 +354,6 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 	void *shbuf;
 	struct metal_io_region *shbuf_io;
 	int ret;
-
-	restore_initial_rsc_table();
 
 	rpmsg_vdev = metal_allocate_memory(sizeof(*rpmsg_vdev));
 	if (!rpmsg_vdev)

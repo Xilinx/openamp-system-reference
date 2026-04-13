@@ -86,15 +86,3 @@ void *get_resource_table (int rsc_id, int *len)
 
 	return &resources;
 }
-
-void free_resource_table (void)
-{
-	if (initial_resources)
-		free(initial_resources);
-}
-
-void restore_initial_rsc_table (void)
-{
-	if (initial_resources)
-		memcpy(&resources, initial_resources, sizeof(resources));
-}
