@@ -48,7 +48,7 @@ static void usage(void)
 
 int main(int argc, char **argv)
 {
-	char buffer[256];
+	char buffer[512];
 	int ret;
 	int fd;
 
@@ -65,12 +65,12 @@ int main(int argc, char **argv)
 		fprintf(stderr, "failed to write endpoint  %s", argv[1]);
 		exit(1);
 	}
-	ret = read(fd, buffer, 256);
+	ret = read(fd, buffer, sizeof(buffer));
 	if (ret < 0) {
 		fprintf(stderr, "failed to read endpoint %s", argv[1]);
 		exit(1);
 	}
-	fprintf(stderr, "message received: \"%s\"\n", buffer);
+	fprintf(stderr, "message received: \"%.*s\"\n", (int)ret, buffer);
 
 	close(fd);
 
